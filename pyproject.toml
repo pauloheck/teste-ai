@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "getai"
+version = "0.0.1"
+description = "GetAI - Sistema Inteligente para Geração de Projetos com RAG e Épicos"
+authors = ["Paulo Heck <paulo.heck@gmail.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langchain = "^0.1.5"
+langchain-openai = "^0.0.5"
+pymongo = "^4.6.1"
+python-dotenv = "^1.0.1"
+pydantic = "^2.5.3"
+fastapi = "^0.109.0"
+uvicorn = "^0.25.0"
+python-jose = "^3.3.0"
+python-multipart = "^0.0.6"
+unstructured = "^0.10.30"
+pdf2image = "^1.16.3"
+python-magic = "^0.4.27"
+pytesseract = "^0.3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+black = "^23.11.0"
+isort = "^5.12.0"
+mypy = "^1.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+getai = "src.main:main"
