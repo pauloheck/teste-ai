@@ -1,23 +1,25 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
+import os
+from datetime import datetime
 
-# Configure logging
+# Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
+# Criação da aplicação FastAPI
 app = FastAPI(
     title="GetAI API",
-    description="API para o sistema GetAI de gestão inteligente de projetos",
+    description="API para processamento assíncrono de documentos e geração de épicos",
     version="1.0.0"
 )
 
-# Configure CORS
+# Configuração CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,20 +28,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware para logging de requisições
+# Middleware para logging
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    start_time = datetime.now()
+    
+    # Log da requisição
     logger.info(f"Request: {request.method} {request.url}")
-    response = await call_next(request)
-    return response
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "version": "1.0.0"}
+    
+    try:
+        response = await call_next(request)
+        
+        # Log do tempo de resposta
+        duration = (datetime.now() - start_time).total_seconds()
+        logger.info(f"Response time: {duration:.2f} seconds")
+        
+        return response
+        
+    except Exception as e:
+        # Log de erro
+        logger.error(f"HTTP error: {str(e)}")
+        raise
 
 # Include routers
-from src.api.routers import documents, epics
+from src.api.routers import documents, epics, stories
 
 # Adiciona os routers
 app.include_router(
@@ -50,23 +62,23 @@ app.include_router(
 
 app.include_router(
     epics.router,
-    prefix="/api",
+    prefix="/api/epics",
     tags=["epics"]
 )
 
-# Error handlers
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    logger.error(f"HTTP error: {exc.status_code} - {exc.detail}")
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail}
-    )
+app.include_router(
+    stories.router,
+    prefix="/api/stories",
+    tags=["stories"]
+)
 
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+# Root endpoint
+@app.get("/")
+async def root():
+    return {
+        "message": "Bem-vindo à GetAI API",
+        "version": "1.0.0",
+        "status": "online",
+        "docs_url": "/docs",
+        "redoc_url": "/redoc"
+    }

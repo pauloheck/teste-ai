@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 import numpy as np
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 import logging
 from pymongo import MongoClient
 from datetime import datetime

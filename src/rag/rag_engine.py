@@ -1,9 +1,9 @@
 from typing import List, Dict, Optional, Union
 import os
-from datetime import datetime
 import logging
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from datetime import datetime
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 from .document_processor import DocumentProcessor
 from .embeddings_manager import EmbeddingsManager
 

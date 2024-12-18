@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 import os
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import (
+from langchain_community.document_loaders import (
     TextLoader,
     PDFMinerLoader,
     UnstructuredMarkdownLoader,

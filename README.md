@@ -37,17 +37,13 @@ cd getai
 poetry install
 ```
 
-3. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env
-# Edite o arquivo .env com suas chaves de API
-```
 
 ### Uso
 
 Execute o sistema com:
 ```bash
 poetry run getai
+poetry run python src/api/run.py
 ```
 
 ## 🛠️ Funcionalidades

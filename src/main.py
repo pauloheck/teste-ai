@@ -1,7 +1,14 @@
 import os
+from fastapi import FastAPI
 from src.agents.rag_agent import RAGAgent
 from src.agents.epic_generator import EpicGenerator
 from src.utils.document_loader import load_documents
+from src.api.routers import epics
+
+app = FastAPI(title="GetAI API")
+
+# Register routers
+app.include_router(epics.router, prefix="/api/epics", tags=["epics"])
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')

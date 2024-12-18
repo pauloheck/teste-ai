@@ -50,33 +50,29 @@ class EpicGenerator:
            - Mantenha entre 3-5 frases
 
         3. Objetivos:
-           - Liste 3-5 objetivos específicos e mensuráveis
-           - Cada objetivo deve começar com um verbo no infinitivo
-           - Foque em resultados, não em tarefas
+           - Liste 4-6 objetivos específicos e mensuráveis
+           - Comece cada objetivo com um verbo no infinitivo
 
         4. User Stories:
-           - Crie 3-5 user stories essenciais
-           - Use EXATAMENTE o formato: "Como [papel], eu quero [ação] para que [benefício]"
-           - NÃO repita "eu quero" na parte da ação
-           - Exemplo correto: "Como desenvolvedor, eu quero implementar testes automatizados para que bugs sejam detectados rapidamente"
-           - Exemplo incorreto: "Como desenvolvedor, eu quero eu quero implementar testes para que bugs sejam detectados"
-           - Certifique-se que cada história agregue valor ao usuário
+           - Crie 4-6 user stories no formato:
+           {{"role": "papel do usuário", "action": "ação desejada", "benefit": "benefício esperado"}}
+           - Não inclua "Como", "eu quero" ou "para que" nas propriedades individuais
+           - Exemplo correto:
+             {{"role": "desenvolvedor", "action": "configurar integrações", "benefit": "facilitar a conexão com outros sistemas"}}
 
         5. Critérios de Aceitação:
-           - Liste 3-5 critérios específicos e verificáveis
-           - Cada critério deve ser claro e testável
-           - Use linguagem objetiva
+           - Liste 4-6 critérios específicos e verificáveis
+           - Comece cada critério com "O sistema deve" ou similar
 
         6. Métricas de Sucesso:
-           - Defina 2-4 métricas quantificáveis
+           - Liste 3-5 métricas quantificáveis
            - Inclua números ou percentuais específicos
-           - Foque em resultados mensuráveis
 
         {format_instructions}
         """
         
         self.prompt = ChatPromptTemplate.from_template(
-            template=template,
+            template,
             partial_variables={
                 "format_instructions": self.parser.get_format_instructions()
             }
@@ -92,15 +88,20 @@ class EpicGenerator:
             # Parse the response
             data = self.parser.parse(response.content)
             
-            # Convert user stories dict to UserStory objects
-            user_stories = [
-                UserStory(
-                    role=story["role"],
-                    action=story["action"],
-                    benefit=story["benefit"]
-                )
-                for story in data.user_stories
-            ]
+            # Convert user stories dict to UserStory objects with proper error handling
+            user_stories = []
+            for story in data.user_stories:
+                try:
+                    user_stories.append(
+                        UserStory(
+                            role=story.get("role", "usuário"),  # default to "usuário" if role is missing
+                            action=story.get("action", "realizar uma ação"),  # default action if missing
+                            benefit=story.get("benefit", "obter um benefício")  # default benefit if missing
+                        )
+                    )
+                except Exception as story_error:
+                    print(f"Erro ao processar user story: {story_error}. Story: {story}")
+                    continue
             
             # Create and return Epic object
             return Epic(
@@ -109,7 +110,8 @@ class EpicGenerator:
                 objectives=data.objectives,
                 user_stories=user_stories,
                 acceptance_criteria=data.acceptance_criteria,
-                success_metrics=data.success_metrics
+                success_metrics=data.success_metrics,
+                tags=[]  # Initialize with empty tags
             )
             
         except Exception as e:
