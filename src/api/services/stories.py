@@ -1,10 +1,10 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
-from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
+from src.models.epic import UserStory
+from bson import ObjectId
 from langchain_openai import OpenAIEmbeddings
 
-from ..models.stories import UserStory
 from src.config import OPENAI_API_KEY
 
 class StoryService:

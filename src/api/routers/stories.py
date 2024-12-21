@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from motor.motor_asyncio import AsyncIOMotorCollection
 import logging
 
-from src.api.models.stories import UserStory
+from src.models.epic import UserStory
 from src.api.services.stories import StoryService
-from src.core.database import get_collection
+from src.config.database import get_collection
 from src.config import OPENAI_API_KEY
 from src.api.services.epics import EpicService
 

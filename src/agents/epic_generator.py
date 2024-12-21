@@ -5,6 +5,10 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from src.models.epic import Epic, UserStory
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class EpicData(BaseModel):
     title: str = Field(description="Título do épico")
@@ -50,69 +54,71 @@ class EpicGenerator:
            - Mantenha entre 3-5 frases
 
         3. Objetivos:
-           - Liste 4-6 objetivos específicos e mensuráveis
+           - Liste 3-6 objetivos específicos e mensuráveis
            - Comece cada objetivo com um verbo no infinitivo
+           - Foque em resultados, não em tarefas
 
         4. User Stories:
-           - Crie 4-6 user stories no formato:
-           {{"role": "papel do usuário", "action": "ação desejada", "benefit": "benefício esperado"}}
-           - Não inclua "Como", "eu quero" ou "para que" nas propriedades individuais
-           - Exemplo correto:
-             {{"role": "desenvolvedor", "action": "configurar integrações", "benefit": "facilitar a conexão com outros sistemas"}}
+           - Crie 3-5 histórias de usuário essenciais
+           - Use o formato "Como [role], quero [action] para [benefit]"
+           - Certifique-se que cubram diferentes aspectos do épico
 
         5. Critérios de Aceitação:
-           - Liste 4-6 critérios específicos e verificáveis
-           - Comece cada critério com "O sistema deve" ou similar
+           - Liste 3-5 critérios claros e verificáveis
+           - Inclua critérios funcionais e não-funcionais
+           - Use linguagem precisa e mensurável
 
         6. Métricas de Sucesso:
-           - Liste 3-5 métricas quantificáveis
-           - Inclua números ou percentuais específicos
+           - Defina 2-4 métricas quantificáveis
+           - Inclua métricas de negócio e técnicas
+           - Especifique valores ou percentuais alvo
 
         {format_instructions}
         """
         
-        self.prompt = ChatPromptTemplate.from_template(
-            template,
-            partial_variables={
-                "format_instructions": self.parser.get_format_instructions()
-            }
-        )
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("system", template)
+        ]).partial(format_instructions=self.parser.get_format_instructions())
 
     def generate(self, idea: str) -> Epic:
         """Generate an epic from an idea."""
         try:
-            # Generate content using LangChain
+            # Gera o conteúdo usando o LLM
             messages = self.prompt.format_messages(idea=idea)
+            logger.info(f"Prompt formatado: {messages}")
+            
             response = self.llm.invoke(messages)
+            logger.info(f"Resposta do LLM: {response.content}")
             
-            # Parse the response
-            data = self.parser.parse(response.content)
+            epic_data = self.parser.parse(response.content)
+            logger.info(f"Dados parseados: {epic_data}")
             
-            # Convert user stories dict to UserStory objects with proper error handling
-            user_stories = []
-            for story in data.user_stories:
-                try:
-                    user_stories.append(
-                        UserStory(
-                            role=story.get("role", "usuário"),  # default to "usuário" if role is missing
-                            action=story.get("action", "realizar uma ação"),  # default action if missing
-                            benefit=story.get("benefit", "obter um benefício")  # default benefit if missing
-                        )
-                    )
-                except Exception as story_error:
-                    print(f"Erro ao processar user story: {story_error}. Story: {story}")
-                    continue
+            # Converte as user stories para o formato correto
+            user_stories = [
+                UserStory(
+                    role=story["role"],
+                    action=story["action"],
+                    benefit=story["benefit"]
+                )
+                for story in epic_data.user_stories
+            ]
+            logger.info(f"User stories convertidas: {user_stories}")
             
-            # Create and return Epic object
-            return Epic(
-                title=data.title,
-                description=data.description,
-                objectives=data.objectives,
+            # Cria e retorna o Epic
+            epic = Epic(
+                title=epic_data.title,
+                description=epic_data.description,
+                objectives=epic_data.objectives,
                 user_stories=user_stories,
-                acceptance_criteria=data.acceptance_criteria,
-                success_metrics=data.success_metrics,
-                tags=[]  # Initialize with empty tags
+                acceptance_criteria=epic_data.acceptance_criteria,
+                success_metrics=epic_data.success_metrics,
+                tags=[],  # Tags podem ser adicionadas posteriormente
+                status="draft",
+                priority="medium"
             )
+            logger.info(f"Epic criado: {epic}")
+            return epic
             
         except Exception as e:
-            raise Exception(f"Erro ao gerar épico: {str(e)}")
+            logger.error(f"Erro ao gerar épico: {str(e)}", exc_info=True)
+            raise

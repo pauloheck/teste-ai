@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
-from src.api.models.epics import Epic
+from src.models.epic import Epic
 from src.api.services.epics import EpicService
 from src.config.database import get_epic_collection
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -30,23 +30,30 @@ async def create_epic(
         
         # Persiste o épico no banco
         epic_id = await service.create_epic(epic)
+        epic.id = epic_id
+        return epic
         
-        # Retorna o épico criado
-        return await service.get_epic(epic_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar épico: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao gerar épico: {str(e)}"
+        )
 
 @router.get("/{epic_id}", response_model=Epic)
 async def get_epic(
     epic_id: str,
     service: EpicService = Depends(get_epic_service)
 ) -> Epic:
-    """Retorna um épico específico por ID"""
+    """
+    Retorna um épico específico por ID
+    - epic_id: ID do épico a ser retornado
+    """
     epic = await service.get_epic(epic_id)
     if not epic:
-        raise HTTPException(status_code=404, detail="Epic not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Épico não encontrado"
+        )
     return epic
 
 @router.put("/{epic_id}", response_model=Epic)
@@ -55,24 +62,37 @@ async def update_epic(
     epic_update: Epic,
     service: EpicService = Depends(get_epic_service)
 ) -> Epic:
-    """Atualiza um épico existente"""
-    epic = await service.update_epic(epic_id, epic_update)
-    if not epic:
-        raise HTTPException(status_code=404, detail="Epic not found")
-    return epic
+    """
+    Atualiza um épico existente
+    - epic_id: ID do épico a ser atualizado
+    - epic_update: Dados atualizados do épico
+    """
+    success = await service.update_epic(epic_id, epic_update)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Épico não encontrado"
+        )
+    return await service.get_epic(epic_id)
 
 @router.delete("/{epic_id}")
 async def delete_epic(
     epic_id: str,
     service: EpicService = Depends(get_epic_service)
 ) -> dict:
-    """Remove um épico"""
+    """
+    Remove um épico
+    - epic_id: ID do épico a ser removido
+    """
     success = await service.delete_epic(epic_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Epic not found")
-    return {"message": "Epic deleted successfully"}
+        raise HTTPException(
+            status_code=404,
+            detail="Épico não encontrado"
+        )
+    return {"message": "Épico removido com sucesso"}
 
-@router.get("/", response_model=dict)
+@router.get("/", response_model=List[Epic])
 async def list_epics(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -81,7 +101,7 @@ async def list_epics(
     sort_by: str = Query("created_at", regex="^(created_at|updated_at|title|priority)$"),
     sort_order: int = Query(-1, ge=-1, le=1),
     service: EpicService = Depends(get_epic_service)
-) -> dict:
+) -> List[Epic]:
     """
     Lista épicos com paginação e filtros
     - skip: número de registros para pular
@@ -100,7 +120,7 @@ async def list_epics(
         sort_order=sort_order
     )
 
-@router.post("/search/similar", response_model=List[Epic])
+@router.get("/search/similar", response_model=List[Epic])
 async def search_similar_epics(
     text: str = Query(..., min_length=3),
     limit: int = Query(5, ge=1, le=20),
@@ -113,16 +133,8 @@ async def search_similar_epics(
     - limit: número máximo de resultados
     - threshold: limiar de similaridade (0-1)
     """
-    return await service.search_similar(text, limit, threshold)
-
-@router.post("/generate", response_model=Epic)
-async def generate_epic(
-    idea: str = Query(..., min_length=10)
-) -> Epic:
-    """
-    Gera um novo épico a partir de uma ideia usando IA
-    """
-    try:
-        return epic_generator.generate(idea)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar épico: {str(e)}")
+    return await service.search_similar_epics(
+        text=text,
+        limit=limit,
+        threshold=threshold
+    )

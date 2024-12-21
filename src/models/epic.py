@@ -10,92 +10,84 @@ class EpicSource(str, Enum):
 
 class ExternalReference(BaseModel):
     source: EpicSource
-    external_id: str
-    url: str
-    status: str
-    last_sync: datetime
+    external_id: str = Field(..., description="ID do epic no sistema externo")
+    url: str = Field(..., description="URL para o epic no sistema externo")
+    status: str = Field(..., description="Status do epic no sistema externo")
+    last_sync: datetime = Field(..., description="Última sincronização com o sistema externo")
 
 class UserStory(BaseModel):
-    role: str
-    action: str
-    benefit: str
-    external_references: Optional[List[ExternalReference]] = None
-    
-    def __str__(self) -> str:
-        action = self.action.replace("eu quero ", "")
-        return f"Como {self.role}, eu quero {action} para que {self.benefit}"
+    role: str = Field(..., description="O papel do usuário na história")
+    action: str = Field(..., description="O que o usuário quer fazer")
+    benefit: str = Field(..., description="O benefício ou valor que o usuário obtém")
+    external_references: Optional[List[ExternalReference]] = Field(None, description="Referências externas da história")
 
 class Epic(BaseModel):
-    title: str
-    description: str
-    objectives: List[str]
-    user_stories: List[UserStory]
-    acceptance_criteria: List[str]
-    success_metrics: List[str]
-    external_references: Optional[List[ExternalReference]] = None
-    embedding: Optional[List[float]] = None
-    tags: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = "draft"
-    
+    id: Optional[str] = Field(None, description="ID único do epic")
+    title: str = Field(..., description="Título do epic")
+    description: str = Field(..., description="Descrição detalhada do epic")
+    objectives: List[str] = Field(..., description="Lista de objetivos deste epic")
+    user_stories: List[UserStory] = Field(..., description="Lista de histórias de usuário neste epic")
+    acceptance_criteria: List[str] = Field(..., description="Critérios de aceitação do epic")
+    success_metrics: List[str] = Field(..., description="Métricas de sucesso do epic")
+    external_references: Optional[List[ExternalReference]] = Field(None, description="Referências externas do epic")
+    embedding: Optional[List[float]] = Field(None, description="Embedding do epic para busca semântica")
+    tags: List[str] = Field(default_factory=list, description="Tags para categorização do epic")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Data de criação")
+    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Data da última atualização")
+    status: str = Field("draft", description="Status do epic")
+    priority: str = Field("medium", description="Prioridade do epic")
+
     def to_markdown(self) -> str:
         """Convert the epic to markdown format."""
-        markdown = f"## {self.title}\n\n"
+        md = f"# {self.title}\n\n"
+        md += f"## Descrição\n{self.description}\n\n"
         
-        markdown += "### Descrição\n"
-        markdown += f"{self.description}\n\n"
-        
-        markdown += "### Objetivos\n"
+        md += "## Objetivos\n"
         for obj in self.objectives:
-            markdown += f"- {obj}\n"
-        markdown += "\n"
+            md += f"- {obj}\n"
+        md += "\n"
         
-        markdown += "### User Stories\n"
+        md += "## Histórias de Usuário\n"
         for story in self.user_stories:
-            markdown += f"- {str(story)}\n"
-            if story.external_references:
-                for ref in story.external_references:
-                    markdown += f"  - {ref.source.value}: [{ref.external_id}]({ref.url}) - {ref.status}\n"
-        markdown += "\n"
+            md += f"- Como {story.role}, quero {story.action} para {story.benefit}\n"
+        md += "\n"
         
-        markdown += "### Critérios de Aceitação\n"
-        for criteria in self.acceptance_criteria:
-            markdown += f"- {criteria}\n"
-        markdown += "\n"
+        md += "## Critérios de Aceitação\n"
+        for ac in self.acceptance_criteria:
+            md += f"- {ac}\n"
+        md += "\n"
         
-        markdown += "### Métricas de Sucesso\n"
+        md += "## Métricas de Sucesso\n"
         for metric in self.success_metrics:
-            markdown += f"- {metric}\n"
-        markdown += "\n"
-        
-        if self.external_references:
-            markdown += "### Referências Externas\n"
-            for ref in self.external_references:
-                markdown += f"- {ref.source.value}: [{ref.external_id}]({ref.url}) - {ref.status}\n"
+            md += f"- {metric}\n"
+        md += "\n"
         
         if self.tags:
-            markdown += "### Tags\n"
-            markdown += ", ".join(self.tags)
-            markdown += "\n\n"
+            md += "## Tags\n"
+            md += ", ".join(self.tags)
+            md += "\n\n"
         
-        return markdown
+        return md
 
     def to_embedding_text(self) -> str:
         """Convert epic to text format for embedding generation."""
-        text = f"{self.title}\n\n"
-        text += f"{self.description}\n\n"
+        text = f"{self.title}. {self.description}"
         
-        text += "Objetivos:\n"
-        text += "\n".join(self.objectives) + "\n\n"
+        text += " Objetivos: "
+        text += "; ".join(self.objectives)
         
-        text += "User Stories:\n"
-        text += "\n".join(str(story) for story in self.user_stories) + "\n\n"
+        text += " Histórias: "
+        stories = [f"{s.role} quer {s.action} para {s.benefit}" for s in self.user_stories]
+        text += "; ".join(stories)
         
-        text += "Critérios de Aceitação:\n"
-        text += "\n".join(self.acceptance_criteria) + "\n\n"
+        text += " Critérios: "
+        text += "; ".join(self.acceptance_criteria)
         
-        text += "Métricas de Sucesso:\n"
-        text += "\n".join(self.success_metrics)
+        text += " Métricas: "
+        text += "; ".join(self.success_metrics)
+        
+        if self.tags:
+            text += " Tags: "
+            text += ", ".join(self.tags)
         
         return text
