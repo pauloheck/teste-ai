@@ -112,6 +112,10 @@ data/raw/
 *.xlsx
 *.db
 
+# Pasta de uploads
+data/uploads/*
+!data/uploads/.gitkeep
+
 # Arquivos de Cache
 .mypy_cache/
 .dmypy.json
