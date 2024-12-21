@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from src.models.epic import Epic
-from src.api.services.epics import EpicService
+from src.services.epic_service import EpicService
 from src.config.database import get_epic_collection
 from motor.motor_asyncio import AsyncIOMotorCollection
 from src.agents.epic_generator import EpicGenerator
@@ -10,10 +10,8 @@ epic_generator = EpicGenerator()
 
 router = APIRouter()
 
-async def get_epic_service(
-    collection: AsyncIOMotorCollection = Depends(get_epic_collection)
-) -> EpicService:
-    return EpicService(collection)
+async def get_epic_service() -> EpicService:
+    return EpicService()
 
 @router.post("/", response_model=Epic)
 async def create_epic(
