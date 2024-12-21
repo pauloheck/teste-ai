@@ -1,5 +1,0 @@
-Username: pauloheck
-Password: kD7ifxngtlemG3sI
-Your current IP address (191.221.156.150)
-
-mongodb+srv://pauloheck:kD7ifxngtlemG3sI@cluster0.ayrmy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
