@@ -1,5 +1,5 @@
 """
-GetAI RAG System - Sistema de Retrieval-Augmented Generation
+Ada RAG System - Sistema de Retrieval-Augmented Generation
 """
 
 from .document_processor import DocumentProcessor

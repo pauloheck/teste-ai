@@ -1,10 +1,10 @@
-# GetAI 🤖
+# Ada 🤖
 
-GetAI é um sistema inteligente para geração e gestão de projetos, utilizando IA para automatizar e otimizar processos de desenvolvimento.
+Ada é um sistema inteligente para geração e gestão de projetos, utilizando IA para automatizar e otimizar processos de desenvolvimento.
 
 ## 🎯 Visão Geral
 
-O GetAI combina várias tecnologias de IA para criar uma suite completa de ferramentas para desenvolvedores e gerentes de projeto, incluindo:
+A Ada combina várias tecnologias de IA para criar uma suite completa de ferramentas para desenvolvedores e gerentes de projeto, incluindo:
 
 - 📚 **Sistema RAG (Retrieval-Augmented Generation)**
   - Consulta inteligente de documentos
@@ -29,7 +29,7 @@ O GetAI combina várias tecnologias de IA para criar uma suite completa de ferra
 1. Clone o repositório:
 ```bash
 git clone [URL_DO_REPOSITORIO]
-cd getai
+cd ada
 ```
 
 2. Instale as dependências com Poetry:
@@ -42,7 +42,7 @@ poetry install
 
 Execute o sistema com:
 ```bash
-poetry run getai
+poetry run ada
 poetry run python src/api/run.py
 ```
 
@@ -61,7 +61,7 @@ poetry run python src/api/run.py
 ## 📁 Estrutura do Projeto
 
 ```
-getai/
+ada/
 ├── data/               # Dados e documentos
 ├── src/               
 │   ├── agents/        # Agentes de IA
@@ -84,11 +84,30 @@ getai/
 
 ## 📊 Métricas e Analytics
 
-O GetAI inclui um sistema completo de métricas para acompanhamento de:
+A Ada inclui um sistema completo de métricas para acompanhamento de:
 - Velocidade de desenvolvimento
 - Qualidade de código
 - Progresso do projeto
 - Eficácia das sugestões de IA
+
+## 🔒 Segurança
+
+### Configuração do Ambiente
+1. Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Configure suas variáveis de ambiente no arquivo `.env`:
+- Nunca compartilhe ou comite o arquivo `.env`
+- Mantenha suas chaves de API e credenciais seguras
+- Use valores diferentes para ambientes de desenvolvimento e produção
+
+### Boas Práticas
+- Nunca comite credenciais ou chaves de API no controle de versão
+- Use sempre HTTPS em produção
+- Mantenha suas dependências atualizadas
+- Siga as recomendações de segurança da Azure e MongoDB
 
 ## 🤝 Contribuindo
 
@@ -108,4 +127,4 @@ Veja nosso [tasks.md](tasks.md) para o roadmap completo e backlog do projeto.
 
 ## 📫 Contato
 
-Link do Projeto: [https://github.com/seu-usuario/getai](https://github.com/seu-usuario/getai)
+Link do Projeto: [https://github.com/seu-usuario/ada](https://github.com/seu-usuario/ada)

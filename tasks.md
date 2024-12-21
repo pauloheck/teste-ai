@@ -1,8 +1,8 @@
-# GetAI - Backlog e Roadmap 
+# Ada - Backlog e Roadmap 
 
 ## Objetivos
 
-O GetAI visa ser uma ferramenta completa para auxiliar no desenvolvimento de software através de IA, focando em:
+A Ada visa ser uma ferramenta completa para auxiliar no desenvolvimento de software através de IA, focando em:
 
 1. Consulta inteligente de documentação (RAG)
 2. Geração automatizada de épicos e histórias

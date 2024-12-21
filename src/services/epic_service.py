@@ -2,41 +2,98 @@ import logging
 from datetime import datetime
 from typing import List, Optional, Dict
 from bson import ObjectId
-from pymongo import MongoClient, ASCENDING
-from langchain_openai import OpenAIEmbeddings
+from pymongo import ASCENDING
+from motor import motor_asyncio
+from src.config import MONGODB_URI, MONGODB_DB_NAME
+from src.utils.azure_client import get_azure_chat_model, get_azure_embeddings
+import asyncio
 
 from src.models.epic import Epic, UserStory, ExternalReference, EpicSource
-from src.config import MONGODB_URI
 
 logger = logging.getLogger(__name__)
 
 class EpicService:
     def __init__(self):
-        self.client = MongoClient(MONGODB_URI)
-        self.db = self.client.getai
-        self.epic_collection = self.db.epics
-        self.embeddings = OpenAIEmbeddings()
-        
-        # Ensure indexes
-        self._ensure_indexes()
-        
-    def _ensure_indexes(self):
-        """Ensure all required indexes exist"""
-        indexes = [
-            ("title", ASCENDING),
-            ("status", ASCENDING),
-            ("created_at", ASCENDING),
-            ("tags", ASCENDING),
-            ("external_references.source", ASCENDING),
-            ("external_references.external_id", ASCENDING),
-        ]
-        
-        for field, direction in indexes:
-            self.epic_collection.create_index([(field, direction)])
+        """Initialize Epic Service with MongoDB connection."""
+        try:
+            # Initialize async services
+            self.embeddings = None
+            self.llm = None
             
-        # Criar índice para busca por similaridade
-        self.epic_collection.create_index([("embedding", "2dsphere")])
-
+            # Initialize MongoDB connection
+            self.client = motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
+            self.db = self.client[MONGODB_DB_NAME]
+            self.epic_collection = self.db["epics"]
+            
+            logger.info("Successfully initialized EpicService")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize EpicService: {str(e)}")
+            raise
+            
+    async def initialize(self):
+        """Initialize async services and ensure indexes."""
+        try:
+            # Initialize AI services
+            self.embeddings = await get_azure_embeddings()
+            self.llm = await get_azure_chat_model()
+            
+            # Ensure indexes exist
+            await self._ensure_indexes()
+            
+            logger.info("Successfully initialized async services and indexes")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize async services: {str(e)}")
+            raise
+            
+    async def _ensure_indexes(self):
+        """Ensure all required indexes exist"""
+        try:
+            # Get existing indexes
+            existing_indexes = await self.epic_collection.list_indexes().to_list(None)
+            existing_index_names = {idx.get('name') for idx in existing_indexes}
+            
+            # Define standard indexes
+            standard_indexes = {
+                "status_1": ("status", 1),
+                "priority_1": ("priority", 1),
+                "tags_1": ("tags", 1),
+                "created_at_1": ("created_at", 1)
+            }
+            
+            # Create standard indexes if they don't exist
+            for idx_name, (field, direction) in standard_indexes.items():
+                if idx_name not in existing_index_names:
+                    try:
+                        await self.epic_collection.create_index([(field, direction)])
+                        logger.info(f"Created index {idx_name}")
+                    except Exception as e:
+                        logger.warning(f"Error creating index {idx_name}: {str(e)}")
+            
+            # Handle vector index
+            vector_index_name = "embedding_2dsphere"
+            try:
+                # Only create if it doesn't exist
+                if vector_index_name not in existing_index_names:
+                    await self.epic_collection.create_index(
+                        [("embedding", "2dsphere")],
+                        name=vector_index_name,
+                        sparse=True,
+                        background=True
+                    )
+                    logger.info(f"Created vector index {vector_index_name}")
+                else:
+                    logger.info(f"Vector index {vector_index_name} already exists")
+            except Exception as e:
+                logger.warning(f"Error handling vector index: {str(e)}")
+            
+            logger.info("Successfully ensured all indexes")
+            
+        except Exception as e:
+            logger.error(f"Error ensuring indexes: {str(e)}")
+            # Don't raise the error to allow the service to continue
+            
     def _to_dict(self, epic: Epic) -> Dict:
         """Convert Epic object to dictionary for MongoDB"""
         epic_dict = {
@@ -145,7 +202,7 @@ class EpicService:
             
             # Convert to dict and insert
             epic_dict = self._to_dict(epic)
-            result = self.epic_collection.insert_one(epic_dict)
+            result = await self.epic_collection.insert_one(epic_dict)
             
             logger.info(f"[EPIC] Épico criado com sucesso. ID: {result.inserted_id}")
             return str(result.inserted_id)
@@ -158,7 +215,7 @@ class EpicService:
         """Get epic by ID"""
         try:
             logger.info(f"[EPIC] Buscando épico por ID: {epic_id}")
-            epic_dict = self.epic_collection.find_one({"_id": ObjectId(epic_id)})
+            epic_dict = await self.epic_collection.find_one({"_id": ObjectId(epic_id)})
             if epic_dict:
                 logger.info(f"[EPIC] Épico encontrado: {epic_dict.get('title')}")
                 return self._from_dict(epic_dict)
@@ -181,7 +238,7 @@ class EpicService:
             
             # Convert to dict and update
             epic_dict = self._to_dict(epic)
-            result = self.epic_collection.update_one(
+            result = await self.epic_collection.update_one(
                 {"_id": ObjectId(epic_id)},
                 {"$set": epic_dict}
             )
@@ -200,7 +257,7 @@ class EpicService:
         """Delete an epic"""
         try:
             logger.info(f"[EPIC] Iniciando remoção do épico {epic_id}")
-            result = self.epic_collection.delete_one({"_id": ObjectId(epic_id)})
+            result = await self.epic_collection.delete_one({"_id": ObjectId(epic_id)})
             
             if result.deleted_count > 0:
                 logger.info(f"[EPIC] Épico {epic_id} removido com sucesso")
@@ -233,7 +290,7 @@ class EpicService:
             # Execute query
             logger.info(f"[EPIC] Executando query com filtros: {query}")
             cursor = self.epic_collection.find(query).skip(skip).limit(limit)
-            epics = [self._from_dict(epic_dict) for epic_dict in cursor]
+            epics = [self._from_dict(epic_dict) async for epic_dict in cursor]
             
             logger.info(f"[EPIC] {len(epics)} épicos encontrados")
             return epics
@@ -246,9 +303,20 @@ class EpicService:
         self,
         text: str,
         limit: int = 5,
-        min_similarity: float = 0.7
+        min_similarity: float = 0.7,
+        num_candidates: int = 100
     ) -> List[Epic]:
-        """Search for similar epics using embedding similarity"""
+        """Search for similar epics using vector similarity search.
+        
+        Args:
+            text: Query text to search for
+            limit: Maximum number of results to return
+            min_similarity: Minimum similarity score (0-1) for results
+            num_candidates: Number of candidates to consider (should be > limit)
+        
+        Returns:
+            List of similar epics sorted by relevance
+        """
         try:
             logger.info(f"[EPIC] Iniciando busca por épicos similares. Texto: '{text[:50]}...'")
             
@@ -256,22 +324,51 @@ class EpicService:
             logger.info("[EPIC] Gerando embedding para busca")
             query_embedding = await self.embeddings.aembed_query(text)
             
-            # Search using vector similarity
+            # Perform vector search
             pipeline = [
                 {
-                    "$vectorSearch": {
-                        "queryVector": query_embedding,
-                        "path": "embedding",
-                        "numCandidates": limit * 2,
-                        "limit": limit,
-                        "minScore": min_similarity
+                    "$geoNear": {
+                        "near": {"type": "Point", "coordinates": query_embedding},
+                        "distanceField": "distance",
+                        "key": "embedding",  # Specify the field explicitly
+                        "spherical": True,
+                        "maxDistance": 1 - min_similarity,
+                        "limit": num_candidates
                     }
+                },
+                {
+                    "$addFields": {
+                        "similarity_score": {
+                            "$subtract": [1, "$distance"]
+                        }
+                    }
+                },
+                {
+                    "$match": {
+                        "similarity_score": {
+                            "$gte": min_similarity
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "similarity_score": -1
+                    }
+                },
+                {
+                    "$limit": limit
                 }
             ]
             
             logger.info(f"[EPIC] Executando busca vetorial. Min Score: {min_similarity}")
-            results = list(self.epic_collection.aggregate(pipeline))
-            epics = [self._from_dict(epic_dict) for epic_dict in results]
+            results = await self.epic_collection.aggregate(pipeline).to_list(None)
+            
+            # Convert results to Epic objects
+            epics = []
+            for result in results:
+                epic = self._from_dict(result)
+                epic.metadata = {"similarity_score": result.get("similarity_score", 0)}
+                epics.append(epic)
             
             logger.info(f"[EPIC] {len(epics)} épicos similares encontrados")
             return epics
@@ -298,7 +395,7 @@ class EpicService:
                 last_sync=datetime.utcnow()
             )
             
-            result = self.epic_collection.update_one(
+            result = await self.epic_collection.update_one(
                 {"_id": ObjectId(epic_id)},
                 {
                     "$push": {"external_references": self._to_dict(ref)},
@@ -322,7 +419,7 @@ class EpicService:
     ) -> bool:
         """Update status of an external reference"""
         try:
-            result = self.epic_collection.update_one(
+            result = await self.epic_collection.update_one(
                 {
                     "_id": ObjectId(epic_id),
                     "external_references.source": source.value,

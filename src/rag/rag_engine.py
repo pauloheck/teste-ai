@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Union
 import os
 import logging
 from datetime import datetime
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from .document_processor import DocumentProcessor
 from .embeddings_manager import EmbeddingsManager
@@ -16,7 +16,9 @@ class RAGEngine:
         self,
         mongodb_uri: str,
         openai_api_key: Optional[str] = None,
-        model_name: str = "gpt-3.5-turbo",
+        azure_endpoint: Optional[str] = None,
+        deployment_name: Optional[str] = None,
+        openai_api_version: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 500
     ):
@@ -26,18 +28,21 @@ class RAGEngine:
         Args:
             mongodb_uri: URI do MongoDB
             openai_api_key: Chave da API OpenAI
-            model_name: Nome do modelo LLM
+            azure_endpoint: Endpoint do Azure OpenAI
+            deployment_name: Nome do deployment do Azure OpenAI
+            openai_api_version: Versão da API do Azure OpenAI
             temperature: Temperatura para geração
             max_tokens: Máximo de tokens na resposta
         """
-        self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+        self.openai_api_key = openai_api_key or os.getenv("AZURE_OPENAI_API_KEY")
         if not self.openai_api_key:
-            raise ValueError("OpenAI API key não encontrada")
+            raise ValueError("Azure OpenAI API key não encontrada")
 
-        self.llm = ChatOpenAI(
-            model_name=model_name,
-            temperature=temperature,
-            max_tokens=max_tokens
+        self.llm = AzureChatOpenAI(
+            openai_api_key=self.openai_api_key,
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
         )
         
         self.document_processor = DocumentProcessor()

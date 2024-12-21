@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, Query, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 import logging
@@ -6,6 +6,8 @@ import os
 import time
 import aiofiles
 from pathlib import Path
+from motor.motor_asyncio import AsyncIOMotorCollection
+from src.config.database import get_epic_collection
 from src.models.document import DocumentProcessingResponse, ProcessingStatus
 from src.services.document_service import DocumentService
 
@@ -17,6 +19,14 @@ document_service = DocumentService()
 # Ensure upload directory exists
 UPLOAD_DIR = Path("data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@router.get("/processing")
+async def list_processing():
+    """Lista documentos em processamento"""
+    return {
+        "message": "Endpoint em desenvolvimento",
+        "status": "coming_soon"
+    }
 
 @router.get("/documents/processing")
 async def list_processing_status(
@@ -39,7 +49,7 @@ async def list_processing_status(
     except Exception as e:
         logger.error(f"Error listing processing status: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=f"Error listing processing status: {str(e)}"
         )
 
@@ -52,7 +62,7 @@ async def get_processing_status(processing_id: str) -> DocumentProcessingRespons
         record = await document_service.get_processing_status(processing_id)
         if not record:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=404,
                 detail=f"Processing record not found: {processing_id}"
             )
         
@@ -67,7 +77,7 @@ async def get_processing_status(processing_id: str) -> DocumentProcessingRespons
     except Exception as e:
         logger.error(f"Error getting processing status: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=f"Error getting processing status: {str(e)}"
         )
 
@@ -82,7 +92,7 @@ async def retry_failed_documents():
     except Exception as e:
         logger.error(f"Error retrying failed documents: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=f"Error retrying failed documents: {str(e)}"
         )
 
@@ -104,7 +114,7 @@ async def upload_document(
         if file_extension not in ['.txt', '.pdf', '.md', '.csv', '.xlsx', '.xls']:
             logger.warning(f"[UPLOAD] Unsupported file extension: {file_extension}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=400,
                 detail=f"Unsupported file extension: {file_extension}"
             )
         
@@ -219,6 +229,36 @@ async def upload_document(
         error_msg = f"Error uploading document: {str(e)}"
         logger.error(f"[UPLOAD] Error after {time.time() - start_time:.2f} seconds: {error_msg}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=error_msg
         )
+
+@router.post("/")
+async def upload_document(
+    file: UploadFile = File(...),
+    collection: AsyncIOMotorCollection = Depends(get_epic_collection)
+):
+    """Upload de documento para processamento"""
+    try:
+        # TODO: Implementar processamento de documentos
+        return {
+            "message": "Documento recebido para processamento",
+            "filename": file.filename,
+            "status": "pending"
+        }
+    except Exception as e:
+        logger.error(f"Erro no upload do documento: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing document: {str(e)}"
+        )
+
+@router.get("/processing/{processing_id}")
+async def get_processing_status(processing_id: str):
+    """Retorna o status do processamento de um documento"""
+    # TODO: Implementar verificação de status
+    return {
+        "processing_id": processing_id,
+        "status": "pending",
+        "message": "Status check not implemented yet"
+    }

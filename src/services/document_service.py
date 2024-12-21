@@ -9,19 +9,24 @@ from pathlib import Path
 from src.models.document import DocumentProcessing, ProcessingStatus
 from src.rag.document_processor import DocumentProcessor
 from src.rag.embeddings_manager import EmbeddingsManager
-from src.config import MONGODB_URI
+from src.config.settings import get_settings
 from src.services.background_manager import BackgroundTaskManager
 from pymongo import IndexModel, ASCENDING
+from src.utils.utils import get_mongodb_client, get_azure_embeddings
 
 logger = logging.getLogger(__name__)
 
 class DocumentService:
     def __init__(self):
-        self.client = MongoClient(MONGODB_URI)
-        self.db = self.client.getai
-        self.processing_collection = self.db.document_processing
+        settings = get_settings()
+        self.client = get_mongodb_client(settings.MONGODB_URI)
+        self.db = self.client[settings.MONGODB_DB_NAME]
+        self.processing_collection = self.db[settings.MONGODB_COLLECTION_NAME]
         self.document_processor = DocumentProcessor()
-        self.embeddings_manager = EmbeddingsManager(mongodb_uri=MONGODB_URI)
+        self.embeddings_manager = EmbeddingsManager(
+            mongodb_uri=settings.MONGODB_URI,
+            embeddings=get_azure_embeddings()
+        )
         self.background_manager = BackgroundTaskManager()
         
         # Ensure indexes

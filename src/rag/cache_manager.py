@@ -12,7 +12,7 @@ class CacheManager:
     def __init__(
         self,
         mongodb_uri: str,
-        database_name: str = "getai",
+        database_name: str = "ada",
         collection_name: str = "cache",
         default_ttl: int = 3600  # 1 hora em segundos
     ):

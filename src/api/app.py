@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import os
 from datetime import datetime
+from src.api.routers import epics, documents
 
 # Configuração de logging
 logging.basicConfig(
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Criação da aplicação FastAPI
 app = FastAPI(
-    title="GetAI API",
+    title="Ada API",
     description="API para processamento assíncrono de documentos e geração de épicos",
     version="1.0.0"
 )
@@ -28,15 +29,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware para logging
+# Incluir routers
+app.include_router(epics.router, prefix="/api/epics", tags=["epics"])
+app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
+
+# Middleware para logging e tratamento de erros
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_and_handle_errors(request: Request, call_next):
     start_time = datetime.now()
     
-    # Log da requisição
-    logger.info(f"Request: {request.method} {request.url}")
-    
     try:
+        # Log da requisição
+        logger.info(f"Request: {request.method} {request.url}")
+        
         response = await call_next(request)
         
         # Log do tempo de resposta
@@ -48,37 +53,23 @@ async def log_requests(request: Request, call_next):
     except Exception as e:
         # Log de erro
         logger.error(f"HTTP error: {str(e)}")
-        raise
+        return HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
-# Include routers
-from src.api.routers import documents, epics, stories
-
-# Adiciona os routers
-app.include_router(
-    documents.router,
-    prefix="/api",
-    tags=["documents"]
-)
-
-app.include_router(
-    epics.router,
-    prefix="/api/epics",
-    tags=["epics"]
-)
-
-app.include_router(
-    stories.router,
-    prefix="/api/stories",
-    tags=["stories"]
-)
-
-# Root endpoint
 @app.get("/")
 async def root():
+    """Root endpoint - Retorna informações básicas da API"""
     return {
-        "message": "Bem-vindo à GetAI API",
+        "name": "Ada API",
+        "description": "Sistema Inteligente para Geração de Projetos",
         "version": "1.0.0",
-        "status": "online",
-        "docs_url": "/docs",
-        "redoc_url": "/redoc"
+        "status": "running",
+        "endpoints": {
+            "epics": "/api/epics",
+            "documents": "/api/documents",
+            "docs": "/docs",
+            "openapi": "/openapi.json"
+        }
     }

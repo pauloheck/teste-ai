@@ -18,8 +18,8 @@ validate_config()
 
 # Criação da aplicação FastAPI
 app = FastAPI(
-    title="GetAI API",
-    description="API for GetAI project",
+    title="Ada API",
+    description="API for Ada project",
     version="1.0.0"
 )
 
@@ -42,20 +42,20 @@ async def startup_event():
     """Evento executado na inicialização da aplicação"""
     await init_db()
     logger.info("Database initialized")
-    logger.info("Starting GetAI API...")
+    logger.info("Starting Ada API...")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado no encerramento da aplicação"""
     await close_db_connections()
     logger.info("Database connections closed")
-    logger.info("Shutting down GetAI API...")
+    logger.info("Shutting down Ada API...")
 
 @app.get("/")
 async def root():
     """Endpoint raiz da API"""
     return {
-        "message": "Welcome to GetAI API"
+        "message": "Welcome to Ada API"
     }
 
 if __name__ == "__main__":

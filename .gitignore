@@ -1,3 +1,25 @@
+# Arquivos de Ambiente e Configuração
+.env
+.env.*
+!.env.example
+*.cfg
+config.local.py
+secrets.yaml
+secrets.yml
+credentials.json
+service-account.json
+
+# Certificados e Chaves
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.priv
+*.p12
+*.pfx
+*.csr
+
 # Python
 __pycache__/
 *.py[cod]
@@ -19,18 +41,123 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
 
-# Virtual Environment
+# Ambientes Virtuais
 venv/
 env/
 ENV/
+.venv/
+.env/
+.python-version
+.python-version.*
 
-# IDE
+# IDEs e Editores
 .idea/
 .vscode/
 *.swp
 *.swo
+*.swn
+*.bak
+*.sublime-workspace
+*.sublime-project
+.project
+.settings/
+.classpath
+.factorypath
+*.iml
+*.iws
+*.ipr
+.vs/
+*.code-workspace
 
-# Misc
-.env
+# Logs e Dados
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+logs/
+log/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Sistema Operacional
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Arquivos de Dados Sensíveis
+data/private/
+data/sensitive/
+data/raw/
+*.csv
+*.xls
+*.xlsx
+*.db
+
+# Arquivos de Cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Arquivos de Dependências
+poetry.lock
+package-lock.json
+yarn.lock
+
+# Diretórios de Build e Distribuição
+dist/
+build/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Arquivos de Teste e Cobertura
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Documentação Gerada
+docs/_build/
+site/
+
+# Arquivos Temporários de Jupyter
+.ipynb_checkpoints
+*.ipynb
+jupyter_execute/
+
+# Arquivos de Saída e Relatórios
+output/
+reports/
+results/

@@ -1,11 +1,17 @@
 from typing import List, Dict, Optional
 import numpy as np
-from langchain_openai import OpenAIEmbeddings
+from langchain.embeddings.base import Embeddings
 import logging
 from pymongo import MongoClient
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+def get_azure_embeddings():
+    # You need to implement this function to return an instance of Embeddings
+    # For example:
+    from langchain.embeddings import AzureEmbeddings
+    return AzureEmbeddings()
 
 class EmbeddingsManager:
     """Gerencia a criação e armazenamento de embeddings."""
@@ -13,9 +19,9 @@ class EmbeddingsManager:
     def __init__(
         self,
         mongodb_uri: str,
-        database_name: str = "getai",
+        database_name: str = "ada",
         collection_name: str = "embeddings",
-        embedding_model: str = "text-embedding-ada-002"
+        embeddings: Optional[Embeddings] = None
     ):
         """
         Inicializa o gerenciador de embeddings.
@@ -24,12 +30,12 @@ class EmbeddingsManager:
             mongodb_uri: URI do MongoDB
             database_name: Nome do banco de dados
             collection_name: Nome da coleção
-            embedding_model: Modelo de embedding da OpenAI
+            embeddings: Modelo de embedding
         """
         self.client = MongoClient(mongodb_uri)
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
-        self.embeddings = OpenAIEmbeddings(model=embedding_model)
+        self.embeddings = embeddings or get_azure_embeddings()
         
         # Criar índices
         self.collection.create_index([("embedding", "2dsphere")])

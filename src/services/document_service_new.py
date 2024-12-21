@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class DocumentService:
     def __init__(self):
         self.client = MongoClient(MONGODB_URI)
-        self.db = self.client.getai
+        self.db = self.client.ada
         self.processing_collection = self.db.document_processing
         self.document_processor = DocumentProcessor()
         self.embeddings_manager = EmbeddingsManager(mongodb_uri=MONGODB_URI)

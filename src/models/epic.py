@@ -1,35 +1,31 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from datetime import datetime
 from enum import Enum
 
-class EpicSource(Enum):
+class EpicSource(str, Enum):
     INTERNAL = "internal"
     JIRA = "jira"
     AZURE_DEVOPS = "azure_devops"
 
-@dataclass
-class ExternalReference:
+class ExternalReference(BaseModel):
     source: EpicSource
     external_id: str
     url: str
     status: str
     last_sync: datetime
 
-@dataclass
-class UserStory:
+class UserStory(BaseModel):
     role: str
     action: str
     benefit: str
     external_references: Optional[List[ExternalReference]] = None
     
     def __str__(self) -> str:
-        # Removendo possíveis duplicações de "eu quero"
         action = self.action.replace("eu quero ", "")
         return f"Como {self.role}, eu quero {action} para que {self.benefit}"
 
-@dataclass
-class Epic:
+class Epic(BaseModel):
     title: str
     description: str
     objectives: List[str]
@@ -38,9 +34,9 @@ class Epic:
     success_metrics: List[str]
     external_references: Optional[List[ExternalReference]] = None
     embedding: Optional[List[float]] = None
-    tags: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    tags: List[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = "draft"
     
     def to_markdown(self) -> str:
@@ -51,8 +47,8 @@ class Epic:
         markdown += f"{self.description}\n\n"
         
         markdown += "### Objetivos\n"
-        for objective in self.objectives:
-            markdown += f"- {objective}\n"
+        for obj in self.objectives:
+            markdown += f"- {obj}\n"
         markdown += "\n"
         
         markdown += "### User Stories\n"
@@ -64,8 +60,8 @@ class Epic:
         markdown += "\n"
         
         markdown += "### Critérios de Aceitação\n"
-        for criterion in self.acceptance_criteria:
-            markdown += f"- {criterion}\n"
+        for criteria in self.acceptance_criteria:
+            markdown += f"- {criteria}\n"
         markdown += "\n"
         
         markdown += "### Métricas de Sucesso\n"
@@ -77,6 +73,11 @@ class Epic:
             markdown += "### Referências Externas\n"
             for ref in self.external_references:
                 markdown += f"- {ref.source.value}: [{ref.external_id}]({ref.url}) - {ref.status}\n"
+        
+        if self.tags:
+            markdown += "### Tags\n"
+            markdown += ", ".join(self.tags)
+            markdown += "\n\n"
         
         return markdown
 

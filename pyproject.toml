@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "getai"
+name = "ada"
 version = "0.0.1"
-description = "GetAI - Sistema Inteligente para Geração de Projetos com RAG e Épicos"
+description = "Ada - Sistema Inteligente para Geração de Projetos com RAG e Épicos"
 authors = ["Paulo Heck <paulo.heck@gmail.com>"]
 readme = "README.md"
 packages = [{include = "src"}]
@@ -10,6 +10,9 @@ packages = [{include = "src"}]
 python = "^3.10"
 langchain = "^0.3.12"
 langchain-openai = "^0.2.12"
+azure-identity = "^1.15.0"
+azure-core = "^1.29.6"
+azure-cognitiveservices-language-textanalytics = "^0.2.0"
 pymongo = "^4.6.1"
 python-dotenv = "^1.0.1"
 pydantic = "^2.5.3"
@@ -24,6 +27,7 @@ pytesseract = "^0.3.10"
 pdfminer-six = "^20240706"
 langchain-community = "^0.3.12"
 aiofiles = "^24.1.0"
+motor = "^3.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
@@ -36,4 +40,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-getai = "src.main:main"
+ada = "src.main:main"
